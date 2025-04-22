@@ -1,15 +1,17 @@
-﻿internal class Program
+﻿using Microsoft.Extensions.Configuration;
+
+class Program
 {
     static void Main(string[] args)
     {
-        Console.WriteLine("Starting Action1 Job...");
+        var config = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: false)
+            .Build();
 
-        var profile = Environment.GetEnvironmentVariable("APP_PROFILE");
-        var dryRun = Environment.GetEnvironmentVariable("DRY_RUN");
+        Console.WriteLine("APP_PROFILE: " + config["AppProfile"]);
+        Console.WriteLine("DRY_RUN: " + config["DryRun"]);
 
-        Console.WriteLine($"APP_PROFILE: {profile}");
-        Console.WriteLine($"DRY_RUN: {dryRun}");
-
-        // Your WebJob logic here
+        // Your job logic...
     }
 }
