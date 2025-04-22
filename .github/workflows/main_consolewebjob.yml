@@ -48,7 +48,7 @@ jobs:
           name: webjob
 
       - name: Deploy to Azure Web App
-        uses: azure/webapps-deploy@v3
+        uses: azure/webapps-deploy@v4
         with:
           app-name: 'consolewebjob' # replace with your app name
           slot-name: 'Production'
