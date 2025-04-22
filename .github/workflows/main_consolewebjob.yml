@@ -1,0 +1,71 @@
+name: Build and deploy WebJob to Azure Web App
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+
+      - name: Build project
+        run: dotnet build --configuration Release
+
+      - name: Publish project
+        run: dotnet publish -c Release -o ./publish
+
+      - name: Create WebJob folder structure
+        run: |
+          mkdir webjob_package
+          mkdir webjob_package/App_Data/jobs/triggered/Action1
+          echo "WebJob folder structure created."
+
+      - name: Copy published files to WebJob package
+        run: |
+          Copy-Item -Path publish/* -Destination webjob_package/App_Data/jobs/triggered/Action1 -Recurse
+
+      - name: Copy settings.job file
+        run: |
+          Copy-Item -Path "App_Data/jobs/triggered/Action1/settings.job" -Destination "webjob_package/App_Data/jobs/triggered/Action1"
+
+      - name: Debug:List contents of webjob_package
+        run: Get-ChildItem -Path ./webjob_package -Recurse
+
+      - name: Upload WebJob artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webjob
+          path: webjob_package
+
+  deploy:
+    runs-on: windows-latest
+    needs: build
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: webjob
+          path: webjob_package
+
+      - name: Debug:List downloaded contents
+        run: Get-ChildItem -Path ./webjob_package -Recurse
+
+      - name: Deploy WebJob to Azure
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'consolewebjob'  # Replace with your Azure Web App name
+          slot-name: 'Production'
+          package: './webjob_package'
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_0604EEDA0594448E8ECF6AF869037A11 }}
