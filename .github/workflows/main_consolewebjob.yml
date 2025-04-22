@@ -59,7 +59,7 @@ jobs:
           name: webjob
           path: webjob_package
 
-      - name: Debug: List downloaded contents
+      - name: Debug:List downloaded contents
         run: Get-ChildItem -Path ./webjob_package -Recurse
 
       - name: Deploy WebJob to Azure
