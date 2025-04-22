@@ -1,0 +1,8 @@
+﻿{
+  "is_singleton": false,
+  "schedule": "0 1 * * *",
+  "environment_variables": {
+    "APP_PROFILE": "Action1",
+    "DRY_RUN": "true"
+  }
+}
