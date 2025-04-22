@@ -60,12 +60,12 @@ jobs:
       - name: Debug Downloaded Artifact
         run: |
           echo "Listing contents of downloaded artifact"
-          Get-ChildItem -Path ./webjob_package -Recurse
+          Get-ChildItem -Path ./webjob -Recurse  # Check where the artifact is downloaded
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'consolewebjob'  # Replace with your actual app name
           slot-name: 'Production'
-          package: './webjob_package'  # Ensure the correct path to the package
+          package: './webjob/webjob_package'  # Ensure the correct path to the package
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_0604EEDA0594448E8ECF6AF869037A11 }}
