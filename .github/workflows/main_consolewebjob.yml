@@ -1,4 +1,4 @@
-name: Build and Deploy Azure WebJob
+name: Build and deploy WebJob to Azure Web App
 
 on:
   push:
@@ -11,51 +11,46 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup .NET
+      - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.x'
 
-      - name: Restore dependencies
-        run: dotnet restore
+      - name: Build project
+        run: dotnet build --configuration Release
 
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
+      - name: Publish project
+        run: dotnet publish -c Release -o ./publish
 
-      - name: Publish WebJob
-        run: dotnet publish -c Release -o webjob-publish
-
-      - name: Prepare WebJob package
-        shell: pwsh
+      - name: Prepare WebJob structure
         run: |
-          # Create WebJob folder structure
-          New-Item -ItemType Directory -Force -Path webjob_package/App_Data/jobs/triggered/Action1
+          mkdir -p webjob_package/App_Data/jobs/triggered/Action1
+          cp ./publish/* webjob_package/App_Data/jobs/triggered/Action1/
+          cp ./App_Data/jobs/triggered/Action1/settings.job webjob_package/App_Data/jobs/triggered/Action1/
+          echo "ConsoleApp1.exe" > webjob_package/App_Data/jobs/triggered/Action1/run.cmd
 
-          # Copy published app files
-          Copy-Item -Path webjob-publish/* -Recurse -Destination webjob_package/App_Data/jobs/triggered/Action1/
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: webjob
+          path: webjob_package
 
-          # Create settings.job file with custom environment variables
-          $settings = @'
-          {
-            "is_singleton": false,
-            "schedule": "0 1 * * *",
-            "environment_variables": {
-              "APP_PROFILE": "Action1Folder",
-              "DRY_RUN": "true"
-            }
-          }
-          '@
-          Set-Content -Path webjob_package/App_Data/jobs/triggered/Action1/settings.job -Value $settings -Encoding utf8NoBOM
+  deploy:
+    runs-on: windows-latest
+    needs: build
 
-      - name: Zip WebJob package
-        run: Compress-Archive -Path webjob_package/* -DestinationPath webjob.zip
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: webjob
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'consolewebjob'  # Replace with your actual app name
-          package: webjob.zip
+          app-name: 'consolewebjob' # replace with your app name
+          slot-name: 'Production'
+          package: webjob_package
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_0604EEDA0594448E8ECF6AF869037A11 }}
