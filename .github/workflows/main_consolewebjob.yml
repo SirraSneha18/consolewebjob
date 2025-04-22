@@ -39,7 +39,7 @@ jobs:
         run: |
           Copy-Item -Path "App_Data/jobs/triggered/Action1/settings.job" -Destination "webjob_package/App_Data/jobs/triggered/Action1"
 
-      - name: Debug: List contents of webjob_package
+      - name: Debug:List contents of webjob_package
         run: Get-ChildItem -Path ./webjob_package -Recurse
 
       - name: Upload WebJob artifact
