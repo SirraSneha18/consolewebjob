@@ -14,7 +14,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up .NET
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.x'
@@ -25,13 +25,14 @@ jobs:
       - name: Publish project
         run: dotnet publish -c Release -o ./publish
 
-      - name: Prepare WebJob folder structure
+      - name: Create WebJob folder structure
         run: |
-          mkdir webjob_package
-          mkdir webjob_package/App_Data/jobs/triggered/Action1
-          copy .\publish\* webjob_package\App_Data\jobs\triggered\Action1\
-          copy .\App_Data\jobs\triggered\Action1\settings.job webjob_package\App_Data\jobs\triggered\Action1\
-          echo ConsoleApp1.exe > webjob_package\App_Data\jobs\triggered\Action1\run.cmd
+          New-Item -ItemType Directory -Force -Path webjob_package\App_Data\jobs\triggered\Action1
+
+      - name: Copy files to WebJob folder
+        run: |
+          Copy-Item -Path publish\* -Destination webjob_package\App_Data\jobs\triggered\Action1 -Recurse
+          Copy-Item -Path App_Data\jobs\triggered\Action1\settings.job -Destination webjob_package\App_Data\jobs\triggered\Action1
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -48,15 +49,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: webjob
-          path: webjob_package
-
-      - name: List contents (for debugging)
-        run: dir webjob_package /s
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'consolewebjob' # Replace with your actual Azure Web App name
+          app-name: 'consolewebjob'  # Replace with your actual app name
           slot-name: 'Production'
           package: webjob_package
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_0604EEDA0594448E8ECF6AF869037A11 }}
